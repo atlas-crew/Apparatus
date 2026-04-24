@@ -28,19 +28,107 @@ interface ApparatusContextValue {
 const ApparatusContext = createContext<ApparatusContextValue | undefined>(undefined);
 
 const STORAGE_KEY = 'apparatus-base-url';
-const DEFAULT_URL = 'http://localhost:8090';
+const FALLBACK_DEV_URL = 'http://localhost:8090';
+const UNCONFIGURED_BASE_URL = '';
+const STATIC_DASHBOARD_HOST_SUFFIXES = ['.github.io', '.gitlab.io', '.pages.dev', '.netlify.app', '.vercel.app'];
 
-function getStoredUrl(): string {
+type LocationLike = Pick<Location, 'origin' | 'protocol'> | null | undefined;
+type StorageLike = Pick<Storage, 'getItem' | 'setItem'> | null | undefined;
+
+function getDefaultLocation(): LocationLike {
+  return typeof window !== 'undefined' ? window.location : undefined;
+}
+
+function getDefaultStorage(): StorageLike {
+  if (typeof window === 'undefined') {
+    return undefined;
+  }
+
   try {
-    return localStorage.getItem(STORAGE_KEY) || DEFAULT_URL;
+    return window.localStorage;
   } catch {
-    return DEFAULT_URL;
+    return undefined;
   }
 }
 
-function saveUrl(url: string): void {
+function normalizeBaseUrl(url: string): string {
   try {
-    localStorage.setItem(STORAGE_KEY, url);
+    return new URL(url).origin;
+  } catch {
+    return url.replace(/\/+$/, '');
+  }
+}
+
+function resolveConfiguredBaseUrl(configuredUrl: string | undefined): string | undefined {
+  const trimmedUrl = configuredUrl?.trim();
+  if (!trimmedUrl || !isValidUrl(trimmedUrl)) {
+    return undefined;
+  }
+
+  return normalizeBaseUrl(trimmedUrl);
+}
+
+function resolveFallbackBaseUrl(locationLike: LocationLike): string {
+  if (locationLike?.protocol === 'https:') {
+    return UNCONFIGURED_BASE_URL;
+  }
+
+  return FALLBACK_DEV_URL;
+}
+
+function isLikelyStaticDashboardHost(origin: string): boolean {
+  try {
+    const hostname = new URL(origin).hostname;
+    return STATIC_DASHBOARD_HOST_SUFFIXES.some((suffix) => hostname === suffix.slice(1) || hostname.endsWith(suffix));
+  } catch {
+    return false;
+  }
+}
+
+export function resolveDefaultBaseUrl(
+  locationLike: LocationLike = getDefaultLocation(),
+  configuredUrl: string | undefined = import.meta.env.VITE_APPARATUS_API_URL
+): string {
+  const configuredBaseUrl = resolveConfiguredBaseUrl(configuredUrl);
+  if (configuredBaseUrl) {
+    return configuredBaseUrl;
+  }
+
+  if (locationLike?.origin && locationLike.protocol !== 'file:') {
+    const normalizedOrigin = normalizeBaseUrl(locationLike.origin);
+    if (isValidUrl(normalizedOrigin) && !isLikelyStaticDashboardHost(normalizedOrigin)) {
+      return normalizedOrigin;
+    }
+
+    if (isValidUrl(normalizedOrigin) && locationLike.protocol === 'https:' && isLikelyStaticDashboardHost(normalizedOrigin)) {
+      console.info('Static dashboard host detected; configure the Apparatus API URL explicitly.');
+    }
+  }
+
+  return resolveFallbackBaseUrl(locationLike);
+}
+
+export function resolveStoredBaseUrl(
+  storage: StorageLike = getDefaultStorage(),
+  locationLike: LocationLike = getDefaultLocation(),
+  configuredUrl: string | undefined = import.meta.env.VITE_APPARATUS_API_URL
+): string {
+  const fallback = resolveDefaultBaseUrl(locationLike, configuredUrl);
+  try {
+    const storedUrl = storage?.getItem(STORAGE_KEY);
+    if (storedUrl && isValidUrl(storedUrl)) {
+      return normalizeBaseUrl(storedUrl);
+    }
+  } catch {
+    // localStorage unavailable
+  }
+
+  return fallback;
+}
+
+function saveUrl(url: string, storage: StorageLike = getDefaultStorage()): void {
+  try {
+    storage?.setItem(STORAGE_KEY, normalizeBaseUrl(url));
   } catch {
     // localStorage unavailable
   }
@@ -61,7 +149,9 @@ interface ApparatusProviderProps {
 }
 
 export function ApparatusProvider({ children, defaultUrl }: ApparatusProviderProps) {
-  const [baseUrl, setBaseUrlState] = useState<string>(() => defaultUrl ?? getStoredUrl());
+  const [baseUrl, setBaseUrlState] = useState<string>(() =>
+    normalizeBaseUrl(defaultUrl ?? resolveStoredBaseUrl())
+  );
   const [health, setHealth] = useState<HealthState>({ status: 'unknown' });
   const [hasCompletedInitialHealthCheck, setHasCompletedInitialHealthCheck] = useState(false);
 
@@ -77,8 +167,9 @@ export function ApparatusProvider({ children, defaultUrl }: ApparatusProviderPro
       console.warn('Invalid URL rejected:', newUrl);
       return;
     }
-    setBaseUrlState(newUrl);
-    saveUrl(newUrl);
+    const normalizedUrl = normalizeBaseUrl(newUrl);
+    setBaseUrlState(normalizedUrl);
+    saveUrl(normalizedUrl);
   }, []);
 
   // Health check with proper cleanup
@@ -87,7 +178,10 @@ export function ApparatusProvider({ children, defaultUrl }: ApparatusProviderPro
     setHasCompletedInitialHealthCheck(false);
 
     if (!client) {
-      setHealth({ status: 'unknown', message: 'No client configured' });
+      setHealth({
+        status: 'unknown',
+        message: baseUrl ? 'No client configured' : 'Set Apparatus API URL in Settings',
+      });
       setHasCompletedInitialHealthCheck(true);
       return;
     }
