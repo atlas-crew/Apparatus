@@ -3,6 +3,7 @@ node_modules/
 
 # build output
 dist/
+**/dist-*/
 apps/apparatus/dist-dashboard
 *.tsbuildinfo
 
@@ -45,3 +46,4 @@ pino-*.log
 
 # jekyll
 docs/_site/
+apps/apparatus/data/

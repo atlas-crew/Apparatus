@@ -2,7 +2,7 @@
 
 Cybersecurity testing and simulation lab platform with 58+ features spanning deception, chaos engineering, red team automation, and multi-protocol support.
 
-Part of the [Inferno Lab](https://github.com/inferno-lab) security testing suite.
+Part of the [Inferno Lab](https://atlascrew.dev/inferno) security testing suite.
 
 ## Quick Start
 
@@ -16,33 +16,33 @@ docker run -p 8090:8090 -p 8443:8443 nickcrew/apparatus
 
 ## Exposed Ports
 
-| Port | Protocol |
-|------|----------|
-| `8090` | HTTP/1.1 + WebSocket |
-| `8443` | HTTP/2 TLS |
-| `8091` | HTTP/2 cleartext (h2c) |
-| `50051` | gRPC |
-| `9000` | TCP echo |
-| `9001` | UDP echo |
-| `6379` | Redis mock |
-| `1883` | MQTT |
-| `2525` | SMTP |
-| `5514` | Syslog |
-| `1344` | ICAP |
-| `7946/udp` | Cluster gossip |
+| Port       | Protocol               |
+| ---------- | ---------------------- |
+| `8090`     | HTTP/1.1 + WebSocket   |
+| `8443`     | HTTP/2 TLS             |
+| `8091`     | HTTP/2 cleartext (h2c) |
+| `50051`    | gRPC                   |
+| `9000`     | TCP echo               |
+| `9001`     | UDP echo               |
+| `6379`     | Redis mock             |
+| `1883`     | MQTT                   |
+| `2525`     | SMTP                   |
+| `5514`     | Syslog                 |
+| `1344`     | ICAP                   |
+| `7946/udp` | Cluster gossip         |
 
 ## Configuration
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `HOST` | `127.0.0.1` | Bind address |
-| `PORT_HTTP1` | `8090` | HTTP/1.1 port |
-| `PORT_HTTP2` | `8443` | HTTP/2 TLS port |
-| `DEMO_MODE` | `false` | Enable all endpoints without localhost check |
-| `TLS_KEY` | `certs/server.key` | TLS private key path |
-| `TLS_CRT` | `certs/server.crt` | TLS certificate path |
-| `ANTHROPIC_API_KEY` | — | Claude API key for AI autopilot features |
-| `CLUSTER_SHARED_SECRET` | — | Shared secret for cluster authentication |
+| Variable                | Default            | Description                                  |
+| ----------------------- | ------------------ | -------------------------------------------- |
+| `HOST`                  | `127.0.0.1`        | Bind address                                 |
+| `PORT_HTTP1`            | `8090`             | HTTP/1.1 port                                |
+| `PORT_HTTP2`            | `8443`             | HTTP/2 TLS port                              |
+| `DEMO_MODE`             | `false`            | Enable all endpoints without localhost check |
+| `TLS_KEY`               | `certs/server.key` | TLS private key path                         |
+| `TLS_CRT`               | `certs/server.crt` | TLS certificate path                         |
+| `ANTHROPIC_API_KEY`     | —                  | Claude API key for AI autopilot features     |
+| `CLUSTER_SHARED_SECRET` | —                  | Shared secret for cluster authentication     |
 
 ### Enable demo mode
 
@@ -123,12 +123,12 @@ volumes:
 docker compose up -d
 ```
 
-| Service | URL |
-|---------|-----|
+| Service             | URL                                                         |
+| ------------------- | ----------------------------------------------------------- |
 | Apparatus Dashboard | [localhost:8090/dashboard](http://localhost:8090/dashboard) |
-| Chimera Portal | [localhost:8880](http://localhost:8880) |
-| Chimera Swagger | [localhost:8880/swagger](http://localhost:8880/swagger) |
-| Crucible UI | [localhost:3000](http://localhost:3000) |
+| Chimera Portal      | [localhost:8880](http://localhost:8880)                     |
+| Chimera Swagger     | [localhost:8880/swagger](http://localhost:8880/swagger)     |
+| Crucible UI         | [localhost:3000](http://localhost:3000)                     |
 
 ## CLI
 
@@ -144,5 +144,5 @@ apparatus autopilot start "Find vulnerabilities"
 ## Links
 
 - [Documentation](https://apparatus.atlascrew.dev)
-- [GitHub](https://github.com/inferno-lab/Apparatus)
+- [GitHub](https://github.com/atlas-crew/Apparatus)
 - [npm](https://www.npmjs.com/package/@atlascrew/apparatus)
